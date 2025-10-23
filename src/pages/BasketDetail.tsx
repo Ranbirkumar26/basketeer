@@ -51,6 +51,8 @@ const BasketDetail = () => {
   const [productPrice, setProductPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [currentUserId, setCurrentUserId] = useState("");
+  const [scraping, setScraping] = useState(false);
+  const [lastNotifiedAt, setLastNotifiedAt] = useState<number>(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -126,6 +128,19 @@ const BasketDetail = () => {
 
       if (error) throw error;
       setBasket(data);
+
+      // Send email notification if threshold is met and not recently notified
+      const now = Date.now();
+      if (
+        data.current_total >= data.threshold_amount &&
+        data.status === "active" &&
+        now - lastNotifiedAt > 300000 // 5 minutes cooldown
+      ) {
+        setTimeout(() => {
+          sendThresholdNotification(data.id);
+        }, 0);
+        setLastNotifiedAt(now);
+      }
     } catch (error) {
       console.error("Error fetching basket:", error);
       toast({
@@ -133,6 +148,63 @@ const BasketDetail = () => {
         description: "Failed to load basket",
         variant: "destructive",
       });
+    }
+  };
+
+  const sendThresholdNotification = async (basketId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke("send-threshold-notification", {
+        body: { basketId },
+      });
+
+      if (error) throw error;
+
+      console.log("Threshold notification sent successfully");
+    } catch (error) {
+      console.error("Error sending threshold notification:", error);
+    }
+  };
+
+  const handleScrapeUrl = async () => {
+    if (!productUrl) {
+      toast({
+        title: "URL required",
+        description: "Please enter a product URL to scrape",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setScraping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-product", {
+        body: { url: productUrl },
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.data) {
+        setProductName(data.data.name);
+        setProductPrice(data.data.price);
+        toast({
+          title: "Product details fetched!",
+          description: "You can now review and add the item.",
+        });
+      } else {
+        toast({
+          title: "Couldn't scrape product",
+          description: data.error || "Please enter details manually",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to scrape product. Please enter manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setScraping(false);
     }
   };
 
@@ -370,14 +442,31 @@ const BasketDetail = () => {
               <CardContent>
                 <form onSubmit={handleAddItem} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="productUrl">Product URL (optional)</Label>
-                    <Input
-                      id="productUrl"
-                      type="url"
-                      value={productUrl}
-                      onChange={(e) => setProductUrl(e.target.value)}
-                      placeholder="https://..."
-                    />
+                    <Label htmlFor="productUrl">Product URL</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="productUrl"
+                        type="url"
+                        value={productUrl}
+                        onChange={(e) => setProductUrl(e.target.value)}
+                        placeholder="Paste product link here"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleScrapeUrl}
+                        disabled={scraping || !productUrl}
+                        variant="secondary"
+                      >
+                        {scraping ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Fetch"
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Paste a link to auto-fill product details
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="productName">Product Name</Label>

@@ -10,8 +10,12 @@ import { Loader2, ShoppingBasket } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [usePhone, setUsePhone] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [fullName, setFullName] = useState("");
   const [hostel, setHostel] = useState("");
   const [room, setRoom] = useState("");
@@ -32,40 +36,72 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      if (usePhone) {
+        if (!otpSent) {
+          // Send OTP
+          const { error } = await supabase.auth.signInWithOtp({
+            phone,
+          });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in.",
-        });
-        navigate("/dashboard");
+          setOtpSent(true);
+          toast({
+            title: "OTP Sent!",
+            description: "Check your phone for the verification code.",
+          });
+        } else {
+          // Verify OTP
+          const { error } = await supabase.auth.verifyOtp({
+            phone,
+            token: otp,
+            type: "sms",
+          });
+
+          if (error) throw error;
+
+          toast({
+            title: "Success!",
+            description: "You've been logged in.",
+          });
+          navigate("/dashboard");
+        }
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              hostel,
-              room,
+        if (isLogin) {
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) throw error;
+
+          toast({
+            title: "Welcome back!",
+            description: "You've successfully logged in.",
+          });
+          navigate("/dashboard");
+        } else {
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                hostel,
+                room,
+              },
+              emailRedirectTo: `${window.location.origin}/dashboard`,
             },
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-          },
-        });
+          });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        toast({
-          title: "Account created!",
-          description: "Welcome to Basketeer. Redirecting to dashboard...",
-        });
-        navigate("/dashboard");
+          toast({
+            title: "Account created!",
+            description: "Welcome to Basketeer. Redirecting to dashboard...",
+          });
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       toast({
@@ -92,78 +128,164 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
+            <div className="flex gap-2 mb-4">
+              <Button
+                type="button"
+                variant={!usePhone ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => {
+                  setUsePhone(false);
+                  setOtpSent(false);
+                }}
+              >
+                Email
+              </Button>
+              <Button
+                type="button"
+                variant={usePhone ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => {
+                  setUsePhone(true);
+                  setIsLogin(true);
+                }}
+              >
+                Phone (OTP)
+              </Button>
+            </div>
+
+            {usePhone ? (
               <>
+                {!otpSent ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+91 9876543210"
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      We'll send you a one-time verification code
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">Enter OTP</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="123456"
+                      maxLength={6}
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Enter the 6-digit code sent to {phone}
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {!isLogin && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="John Doe"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="hostel">Hostel</Label>
+                        <Input
+                          id="hostel"
+                          type="text"
+                          value={hostel}
+                          onChange={(e) => setHostel(e.target.value)}
+                          placeholder="Block A"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="room">Room</Label>
+                        <Input
+                          id="room"
+                          type="text"
+                          value={room}
+                          onChange={(e) => setRoom(e.target.value)}
+                          placeholder="101"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@college.edu"
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="hostel">Hostel</Label>
-                    <Input
-                      id="hostel"
-                      type="text"
-                      value={hostel}
-                      onChange={(e) => setHostel(e.target.value)}
-                      placeholder="Block A"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="room">Room</Label>
-                    <Input
-                      id="room"
-                      type="text"
-                      value={room}
-                      onChange={(e) => setRoom(e.target.value)}
-                      placeholder="101"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
                 </div>
               </>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@college.edu"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLogin ? "Sign In" : "Create Account"}
+              {usePhone
+                ? otpSent
+                  ? "Verify OTP"
+                  : "Send OTP"
+                : isLogin
+                ? "Sign In"
+                : "Create Account"}
             </Button>
-            <div className="text-center text-sm">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline"
-              >
-                {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
-              </button>
-            </div>
+
+            {!usePhone && (
+              <div className="text-center text-sm">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-primary hover:underline"
+                >
+                  {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
+                </button>
+              </div>
+            )}
+
+            {usePhone && otpSent && (
+              <div className="text-center text-sm">
+                <button
+                  type="button"
+                  onClick={() => setOtpSent(false)}
+                  className="text-primary hover:underline"
+                >
+                  Didn't receive code? Resend
+                </button>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

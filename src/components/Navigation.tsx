@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ShoppingBasket, LogOut, Plus, Home } from "lucide-react";
+import { ShoppingBasket, LogOut, Plus, Home, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Navigation = () => {
@@ -45,6 +45,14 @@ const Navigation = () => {
             >
               <Plus className="h-4 w-4" />
               Create Basket
+            </Button>
+            <Button
+              variant={isActive("/profile") ? "default" : "ghost"}
+              size="sm"
+              onClick={() => navigate("/profile")}
+            >
+              <User className="h-4 w-4" />
+              Profile
             </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />

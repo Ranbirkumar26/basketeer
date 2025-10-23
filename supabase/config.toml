@@ -1,1 +1,7 @@
 project_id = "pxeridbphoqeufjwdmhy"
+
+[functions.scrape-product]
+verify_jwt = false
+
+[functions.send-threshold-notification]
+verify_jwt = false
