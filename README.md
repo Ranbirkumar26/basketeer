@@ -1,73 +1,79 @@
-# Welcome to your Lovable project
+# Basketeer
 
-## Project info
+Collaborative shopping app for students who want to combine orders, reach minimum basket thresholds, and reduce delivery friction across platforms like BigBasket, Blinkit, Amazon, and similar services.
 
-**URL**: https://lovable.dev/projects/a98d822d-f37f-4a7d-bc43-5c5c730a7129
+## Overview
 
-## How can I edit this code?
+Basketeer lets a user create a shared basket, invite others to add items, track the combined order value in real time, and close the basket when the threshold is reached. It is built as a React + Supabase application with authentication, live basket updates, item management, and edge functions for product scraping and threshold notifications.
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+- Create or join active shared baskets
+- Set platform, order threshold, and expiry time
+- Add product links or manually enter item details
+- Track current basket total against the target threshold
+- Receive threshold notifications through Supabase Edge Functions
+- Use Supabase Auth, database tables, and realtime subscriptions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a98d822d-f37f-4a7d-bc43-5c5c730a7129) and start prompting.
+## Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+| Layer | Technology |
+|---|---|
+| Frontend | React, TypeScript, Vite |
+| UI | shadcn/ui, Tailwind CSS, lucide-react |
+| Backend | Supabase Auth, Postgres, Realtime, Edge Functions |
+| Data Access | `@supabase/supabase-js` |
 
-**Use your preferred IDE**
+## Project Structure
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```text
+basketeer/
+|-- src/
+|   |-- components/
+|   |-- integrations/supabase/
+|   |-- pages/
+|   `-- main.tsx
+|-- supabase/
+|   |-- functions/
+|   `-- migrations/
+|-- package.json
+`-- README.md
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Setup
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
+cp .env.example .env
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Fill `.env` with your Supabase project values:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```env
+VITE_SUPABASE_PROJECT_ID=your-project-id
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+VITE_SUPABASE_URL=https://your-project.supabase.co
+```
 
-**Use GitHub Codespaces**
+## Scripts
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+npm run dev       # local development
+npm run build     # production build
+npm run lint      # lint project files
+npm run preview   # preview production build
+```
 
-## What technologies are used for this project?
+## Notes
 
-This project is built with:
+- Real `.env` files are intentionally ignored and should not be committed.
+- Supabase migrations and edge functions are included under `supabase/`.
+- Product scraping may fail for websites with bot protection or dynamic rendering; manual item entry remains the fallback.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Roadmap
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a98d822d-f37f-4a7d-bc43-5c5c730a7129) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Add basket invite links
+- Add notification preferences
+- Add platform-specific product parsers
+- Add tests for basket and item workflows
